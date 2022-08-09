@@ -117,6 +117,7 @@ class BaseLibSVM(BaseEstimator, metaclass=ABCMeta):
         verbose,
         max_iter,
         random_state,
+        noise_value,
     ):
 
         if self._impl not in LIBSVM_IMPL:
@@ -139,12 +140,13 @@ class BaseLibSVM(BaseEstimator, metaclass=ABCMeta):
         self.verbose = verbose
         self.max_iter = max_iter
         self.random_state = random_state
+        self.noise_value = noise_value
 
     def _more_tags(self):
         # Used by cross_val_score.
         return {"pairwise": self.kernel == "precomputed"}
 
-    def fit(self, X, y, sample_weight=None):
+    def fit(self, X, y, sample_weight=None,noise_value=0):
         """Fit the SVM model according to the given training data.
 
         Parameters
@@ -180,6 +182,8 @@ class BaseLibSVM(BaseEstimator, metaclass=ABCMeta):
         self._validate_params()
 
         rnd = check_random_state(self.random_state)
+        
+        self.noise_value = noise_value
 
         sparse = sp.isspmatrix(X)
         if sparse and self.kernel == "precomputed":
@@ -249,7 +253,7 @@ class BaseLibSVM(BaseEstimator, metaclass=ABCMeta):
             print("[LibSVM]", end="")
 
         seed = rnd.randint(np.iinfo("i").max)
-        fit(X, y, sample_weight, solver_type, kernel, random_seed=seed)
+        fit(X, y, sample_weight, solver_type, kernel, random_seed=seed,noise_value=noise_value)
         # see comment on the other call to np.iinfo in this file
 
         self.shape_fit_ = X.shape if hasattr(X, "shape") else (n_samples,)
@@ -304,7 +308,7 @@ class BaseLibSVM(BaseEstimator, metaclass=ABCMeta):
                 ConvergenceWarning,
             )
 
-    def _dense_fit(self, X, y, sample_weight, solver_type, kernel, random_seed):
+    def _dense_fit(self, X, y, sample_weight, solver_type, kernel, random_seed,noise_value):
         if callable(self.kernel):
             # you must store a reference to X to compute the kernel in predict
             # TODO: add keyword copy to copy on demand
@@ -348,11 +352,12 @@ class BaseLibSVM(BaseEstimator, metaclass=ABCMeta):
             epsilon=self.epsilon,
             max_iter=self.max_iter,
             random_seed=random_seed,
+            noise_value=self.noise_value
         )
 
         self._warn_from_fit_status()
 
-    def _sparse_fit(self, X, y, sample_weight, solver_type, kernel, random_seed):
+    def _sparse_fit(self, X, y, sample_weight, solver_type, kernel, random_seed,noise_value):
         X.data = np.asarray(X.data, dtype=np.float64, order="C")
         X.sort_indices()
 
@@ -393,6 +398,7 @@ class BaseLibSVM(BaseEstimator, metaclass=ABCMeta):
             int(self.probability),
             self.max_iter,
             random_seed,
+            self.noise_value,
         )
 
         self._warn_from_fit_status()
@@ -719,6 +725,7 @@ class BaseSVC(ClassifierMixin, BaseLibSVM, metaclass=ABCMeta):
         decision_function_shape,
         random_state,
         break_ties,
+        noise_value,
     ):
         self.decision_function_shape = decision_function_shape
         self.break_ties = break_ties
@@ -738,6 +745,7 @@ class BaseSVC(ClassifierMixin, BaseLibSVM, metaclass=ABCMeta):
             verbose=verbose,
             max_iter=max_iter,
             random_state=random_state,
+            noise_value=noise_value,
         )
 
     def _validate_targets(self, y):

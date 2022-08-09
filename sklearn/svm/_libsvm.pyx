@@ -63,7 +63,8 @@ def fit(
     int shrinking=1, int probability=0,
     double cache_size=100.,
     int max_iter=-1,
-    int random_seed=0):
+    int random_seed=0,
+    float noise_value=0):
     """
     Train the model using libsvm (low-level method)
 
@@ -131,6 +132,9 @@ def fit(
 
     random_seed : int, default=0
         Seed for the random number generator used for probability estimates.
+        
+    noise_value : float, default=0
+        If noise_value is 0, no noise is generated. Otherwise, gaussian noise of noise_value is.
 
     Returns
     -------
@@ -253,7 +257,15 @@ def fit(
 
     svm_free_and_destroy_model(&model)
     free(problem.x)
-
+    
+    if(noise_value != 0):
+        tabLaplace = []
+        #ADD NOISE
+        for i in range(len(sv_coef)):
+            tabLaplace.append(np.random.laplace(0,noise_value))
+            
+        sv_coef += tabLaplace
+    
     return (support, support_vectors, n_class_SV, sv_coef, intercept,
            probA, probB, fit_status, n_iter)
 

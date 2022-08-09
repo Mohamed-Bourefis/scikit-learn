@@ -668,6 +668,9 @@ class SVC(BaseSVC):
         probability estimates. Ignored when `probability` is False.
         Pass an int for reproducible output across multiple function calls.
         See :term:`Glossary <random_state>`.
+    
+    noise_value : float, default=0
+        If noise_value is 0, no noise is generated. Otherwise, gaussian noise of noise_value is.
 
     Attributes
     ----------
@@ -795,6 +798,7 @@ class SVC(BaseSVC):
         decision_function_shape="ovr",
         break_ties=False,
         random_state=None,
+        noise_value =0,
     ):
 
         super().__init__(
@@ -814,6 +818,7 @@ class SVC(BaseSVC):
             decision_function_shape=decision_function_shape,
             break_ties=break_ties,
             random_state=random_state,
+            noise_value=noise_value,
         )
 
     def _more_tags(self):
